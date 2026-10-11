@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2FA Interactive Visualizer | Bidirectional Tape Head & State Demonstration</title>
+  <meta name="description" content="Interactive Two-Way Finite Automaton (2FA) animation simulator and visualizer. Demonstrates bidirectional tape head movement, state transitions, symbol revisiting, and step-by-step execution.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- ================= HEADER SECTION ================= -->
+    <header class="app-header">
+      <div class="brand-wrapper">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"></polyline>
+            <line x1="12" y1="19" x2="20" y2="19"></line>
+            <polyline points="20 7 14 13 20 19" stroke="#f59e0b"></polyline>
+          </svg>
+        </div>
+        <div class="brand-titles">
+          <h1>
+            2FA Visualizer
+            <span class="badge-toc">Interactive Demonstration</span>
+          </h1>
+          <p>Bidirectional Tape Movement • State Transitions • Symbol Revisiting Animation</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-open-tests" class="btn-header" title="Open verification test suite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+          Verification Suite (14)
+        </button>
+        <button id="btn-toggle-sound" class="btn-header active" title="Toggle audio feedback">
+          <svg id="sound-icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <span id="sound-label">Audio On</span>
+        </button>
+        <button id="btn-fullscreen" class="btn-header" title="Toggle full-screen presentation mode">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+          </svg>
+          Fullscreen
+        </button>
+      </div>
+    </header>
+
+    <!-- ================= INPUT & CONTROL DECK ================= -->
+    <section class="control-deck" aria-label="Automaton Input and Controls">
+      <div class="deck-row-top">
+        <div class="input-group">
+          <div class="input-label-row">
+            <label for="tape-input" class="input-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <line x1="6" y1="8" x2="6" y2="16"></line>
+                <line x1="10" y1="8" x2="10" y2="16"></line>
+                <line x1="14" y1="8" x2="14" y2="16"></line>
+                <line x1="18" y1="8" x2="18" y2="16"></line>
+              </svg>
+              Input Tape String (Binary Σ = {0, 1})
+            </label>
+            <span class="input-hint">Type any custom binary string or click a preset below</span>
+          </div>
+
+          <div class="input-field-wrapper">
+            <input 
+              type="text" 
+              id="tape-input" 
+              class="tape-input" 
+              value="101001" 
+              placeholder="e.g. 101001"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <div class="input-actions">
+              <button id="btn-random-input" class="btn-input-action" title="Generate random binary string">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 3 21 3 21 8"></polyline>
+                  <line x1="4" y1="20" x2="21" y2="3"></line>
+                  <polyline points="21 16 21 21 16 21"></polyline>
+                  <line x1="15" y1="15" x2="21" y2="21"></line>
+                  <line x1="4" y1="4" x2="9" y2="9"></line>
+                </svg>
+                Random
+              </button>
+              <button id="btn-clear-input" class="btn-input-action" title="Clear input field">
+                ✕ Clear
+              </button>
+            </div>
+          </div>
+
+          <div id="input-error" class="input-error-msg">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="error-text">Invalid input.</span>
+          </div>
+        </div>
+
+        <!-- Presets Selection -->
+        <div class="presets-container">
+          <span class="presets-label">Preset Demonstration Inputs:</span>
+          <div class="preset-pills">
+            <button class="preset-pill active" data-val="101001" title="Reference input: 2 Leftward moves, revisits cells, halts at q1 -> ACCEPT">
+              <strong>101001</strong>
+              <span class="pill-tag ref">Reference</span>
+              <span class="pill-tag acc">Accept</span>
+            </button>
+            <button class="preset-pill" data-val="10101" title="Multiple Leftward reversals, halts in q1 -> ACCEPT">
+              <strong>10101</strong>
+              <span class="pill-tag acc">Accept</span>
+            </button>
+            <button class="preset-pill" data-val="110010" title="Left-boundary fall-off at index 0 -> REJECT">
+              <strong>110010</strong>
+              <span class="pill-tag rej">Reject (Left Boundary)</span>
+            </button>
+            <button class="preset-pill" data-val="0000" title="Pure rightward moves in q0, halts in q0 not in F -> REJECT">
+              <strong>0000</strong>
+              <span class="pill-tag rej">Reject (q0)</span>
+            </button>
+            <button class="preset-pill" data-val="100" title="Simple rightward scan into q1 -> ACCEPT">
+              <strong>100</strong>
+              <span class="pill-tag acc">Accept</span>
+            </button>
+            <button class="preset-pill" data-val="111000" title="Immediate consecutive 1s left boundary fall-off -> REJECT">
+              <strong>111000</strong>
+              <span class="pill-tag rej">Reject</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Simulation Buttons Row -->
+      <div class="deck-row-controls">
+        <div class="control-buttons-group">
+          <button id="btn-run" class="btn-ctrl btn-primary" title="Start / Resume Animation (Spacebar)">
+            <svg id="run-icon-play" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span id="run-btn-text">Run Animation</span>
+          </button>
+
+          <button id="btn-step-prev" class="btn-ctrl" title="Step Backward / Rewind (Left Arrow)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="19 20 9 12 19 4 19 20"></polygon>
+              <line x1="5" y1="19" x2="5" y2="5"></line>
+            </svg>
+            Step Back
+          </button>
+
+          <button id="btn-step-next" class="btn-ctrl" title="Step Forward 1 transition (Right Arrow)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 4 15 12 5 20 5 4"></polygon>
+              <line x1="19" y1="5" x2="19" y2="19"></line>
+            </svg>
+            Step Forward
+          </button>
+
+          <button id="btn-reset" class="btn-ctrl" title="Reset simulation to initial configuration (R)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            Reset
+          </button>
+
+          <button id="btn-restart" class="btn-ctrl" title="Reset and immediately play animation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            Restart
+          </button>
+
+          <button id="btn-instant" class="btn-ctrl btn-instant" title="Calculate full trace and jump to result instantly">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            Run Instantly
+          </button>
+        </div>
+
+        <!-- Animation Speed Slider -->
+        <div class="speed-control-group">
+          <span class="speed-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            Speed:
+          </span>
+          <input 
+            type="range" 
+            id="speed-slider" 
+            class="speed-slider" 
+            min="50" 
+            max="1800" 
+            step="50" 
+            value="800"
+            title="Adjust animation speed (Right is faster)"
+          />
+          <span id="speed-display" class="speed-val-display">1.0x</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DECISION SPOTLIGHT BANNER ================= -->
+    <section id="decision-spotlight" class="decision-spotlight" aria-live="polite">
+      <div class="decision-left">
+        <div id="decision-icon" class="decision-icon">
+          <!-- Dynamically set -->
+        </div>
+        <div class="decision-text">
+          <h2 id="decision-title">DECISION</h2>
+          <p id="decision-desc">Explanation of the formal result.</p>
+        </div>
+      </div>
+      <div class="decision-meta">
+        <span id="decision-total-steps" class="decision-step-badge">10 Steps</span>
+        <span id="decision-config" class="decision-step-badge">Final Config: (q1, 6)</span>
+      </div>
+    </section>
+
+    <!-- ================= TAPE THEATRE & HEAD ANIMATION ================= -->
+    <section class="tape-theatre" aria-label="Animated Input Tape and Read Head">
+      <div class="tape-theatre-header">
+        <div class="theatre-title">
+          <span class="indicator-dot"></span>
+          Input Tape & Bidirectional Read Head
+        </div>
+
+        <div class="tape-live-hud">
+          <div class="hud-badge hud-state">
+            <span class="hud-label">Current State:</span>
+            <span id="hud-current-state" class="hud-value">q0</span>
+          </div>
+          <div class="hud-badge">
+            <span class="hud-label">Configuration:</span>
+            <span id="hud-config" class="hud-value">(q0, 0)</span>
+          </div>
+          <div class="hud-badge">
+            <span class="hud-label">Scanned Symbol:</span>
+            <span id="hud-scanned-symbol" class="hud-value">'1'</span>
+          </div>
+          <div class="hud-badge hud-dir">
+            <span class="hud-label">Next Motion:</span>
+            <span id="hud-direction" class="hud-value">
+              <span class="dir-badge-right">RIGHT ⟶</span>
+            </span>
+          </div>
+          <div class="hud-badge">
+            <span class="hud-label">Step Progress:</span>
+            <span id="hud-step-counter" class="hud-value">0 / 10</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tape Horizontal Track -->
+      <div id="tape-viewport" class="tape-viewport">
+        <!-- Physical Read Head Indicator -->
+        <div id="read-head-pointer" class="read-head-pointer" style="transform: translateX(0px);">
+          <div id="head-badge" class="head-badge">
+            <span id="head-state-text">q0</span>
+            <span id="head-arrow-text">▶</span>
+          </div>
+          <div class="head-arrow"></div>
+        </div>
+
+        <div id="tape-track" class="tape-track">
+          <!-- Dynamically populated tape cells -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 2-COLUMN WORKSPACE ================= -->
+    <div class="workspace-grid">
+      
+      <!-- COLUMN 1: State Diagram & Transition Table -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="6" cy="6" r="3"></circle>
+              <circle cx="18" cy="6" r="3"></circle>
+              <circle cx="12" cy="18" r="3"></circle>
+              <line x1="8.5" y1="7.5" x2="15.5" y2="7.5"></line>
+              <line x1="7.5" y1="8.5" x2="10.5" y2="15.5"></line>
+              <line x1="16.5" y1="8.5" x2="13.5" y2="15.5"></line>
+            </svg>
+            State Transition Diagram
+          </h2>
+          <span class="panel-badge">SVG Animated Graph</span>
+        </div>
+
+        <div id="diagram-container" class="state-diagram-wrapper">
+          <!-- SVG Diagram injected by js/diagram.js -->
+        </div>
+
+        <!-- Authoritative Transition Table Matrix -->
+        <div class="panel-header" style="margin-top: 14px;">
+          <h3 class="panel-title" style="font-size: 1.05rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="3" y1="15" x2="21" y2="15"></line>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+              <line x1="15" y1="3" x2="15" y2="21"></line>
+            </svg>
+            State Transition Table: δ(q, a) → (q', D)
+          </h3>
+          <span class="panel-badge">Live Evaluator</span>
+        </div>
+
+        <div class="transition-table-wrapper">
+          <table class="transition-matrix-table" id="transition-matrix-table">
+            <thead>
+              <tr>
+                <th>State (q)</th>
+                <th>Role / Status</th>
+                <th>Input '0' → (q', D)</th>
+                <th>Input '1' → (q', D)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="row-state-q0">
+                <td class="state-col">
+                  <span class="state-indicator-dot dot-q0"></span>
+                  <strong>q0</strong>
+                </td>
+                <td><span class="table-role-tag role-initial">Initial State</span></td>
+                <td id="cell-q0-0" class="matrix-cell">
+                  <span class="formula-rule">δ(q0, 0) = (q0, R)</span>
+                </td>
+                <td id="cell-q0-1" class="matrix-cell">
+                  <span class="formula-rule">δ(q0, 1) = (q1, R)</span>
+                </td>
+              </tr>
+              <tr id="row-state-q1">
+                <td class="state-col">
+                  <span class="state-indicator-dot dot-q1"></span>
+                  <strong>q1</strong>
+                </td>
+                <td><span class="table-role-tag role-final">Accepting / Final (F)</span></td>
+                <td id="cell-q1-0" class="matrix-cell">
+                  <span class="formula-rule">δ(q1, 0) = (q1, R)</span>
+                </td>
+                <td id="cell-q1-1" class="matrix-cell cell-reversal">
+                  <span class="formula-rule">δ(q1, 1) = (q2, L)</span>
+                  <span class="table-rev-pill">◀ Left</span>
+                </td>
+              </tr>
+              <tr id="row-state-q2">
+                <td class="state-col">
+                  <span class="state-indicator-dot dot-q2"></span>
+                  <strong>q2</strong>
+                </td>
+                <td><span class="table-role-tag role-reversal">Reversal State</span></td>
+                <td id="cell-q2-0" class="matrix-cell">
+                  <span class="formula-rule">δ(q2, 0) = (q0, R)</span>
+                </td>
+                <td id="cell-q2-1" class="matrix-cell cell-reversal">
+                  <span class="formula-rule">δ(q2, 1) = (q1, L)</span>
+                  <span class="table-rev-pill">◀ Left</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Explicit Transition State Functions List -->
+        <div class="panel-header" style="margin-top: 14px;">
+          <h4 class="panel-title" style="font-size: 0.95rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="4 17 10 11 4 5"></polyline>
+              <line x1="12" y1="19" x2="20" y2="19"></line>
+            </svg>
+            Individual Transition State Functions δ
+          </h4>
+          <span class="panel-badge">6 Rules</span>
+        </div>
+
+        <div class="transition-functions-grid">
+          <div id="func-card-q0-0" class="func-card">
+            <div class="func-header">
+              <span class="func-badge">Rule 1</span>
+              <span class="func-dir dir-R">Right ⟶</span>
+            </div>
+            <span class="func-formula">δ(q0, 0) = (q0, R)</span>
+            <span class="func-desc">On 0: Stay in q0, advance Right</span>
+          </div>
+
+          <div id="func-card-q0-1" class="func-card">
+            <div class="func-header">
+              <span class="func-badge">Rule 2</span>
+              <span class="func-dir dir-R">Right ⟶</span>
+            </div>
+            <span class="func-formula">δ(q0, 1) = (q1, R)</span>
+            <span class="func-desc">On 1: Move to accepting q1, advance Right</span>
+          </div>
+
+          <div id="func-card-q1-0" class="func-card">
+            <div class="func-header">
+              <span class="func-badge">Rule 3</span>
+              <span class="func-dir dir-R">Right ⟶</span>
+            </div>
+            <span class="func-formula">δ(q1, 0) = (q1, R)</span>
+            <span class="func-desc">On 0: Stay in q1, advance Right</span>
+          </div>
+
+          <div id="func-card-q1-1" class="func-card reversal-card">
+            <div class="func-header">
+              <span class="func-badge rev">Rule 4</span>
+              <span class="func-dir dir-L">⟵ LEFT</span>
+            </div>
+            <span class="func-formula">δ(q1, 1) = (q2, L)</span>
+            <span class="func-desc">On 1: Move to q2, reverse LEFT ◀</span>
+          </div>
+
+          <div id="func-card-q2-0" class="func-card">
+            <div class="func-header">
+              <span class="func-badge">Rule 5</span>
+              <span class="func-dir dir-R">Right ⟶</span>
+            </div>
+            <span class="func-formula">δ(q2, 0) = (q0, R)</span>
+            <span class="func-desc">On 0: Return to q0, advance Right</span>
+          </div>
+
+          <div id="func-card-q2-1" class="func-card reversal-card">
+            <div class="func-header">
+              <span class="func-badge rev">Rule 6</span>
+              <span class="func-dir dir-L">⟵ LEFT</span>
+            </div>
+            <span class="func-formula">δ(q2, 1) = (q1, L)</span>
+            <span class="func-desc">On 1: Return to q1, reverse LEFT ◀</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMN 2: Execution Trace Panel -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            Execution Trace & Configurations (q, i)
+          </h2>
+          <span id="trace-step-count-badge" class="panel-badge">0 Transitions</span>
+        </div>
+
+        <div class="trace-table-container" id="trace-table-container">
+          <table class="trace-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Config (q, i)</th>
+                <th>Scanned</th>
+                <th>Applied Rule δ</th>
+                <th>Dir</th>
+                <th>Next Config</th>
+              </tr>
+            </thead>
+            <tbody id="trace-table-body">
+              <!-- Dynamically populated trace rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <div style="font-size: 0.78rem; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center;">
+          <span>💡 Click any step in the table to jump tape head directly to that configuration.</span>
+          <button id="btn-copy-trace" class="btn-input-action" style="padding: 4px 8px;">
+            Copy Trace
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= MACHINE SPECIFICATIONS & RULES ================= -->
+    <section class="edu-grid" aria-label="Machine Specifications and Demonstration Rules">
+      <div class="formal-spec-card">
+        <h3 class="panel-title" style="font-size: 1.05rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          Machine Specifications & Parameters
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Two-Way Model Definition:
+          <strong style="color: var(--accent-cyan); font-family: var(--font-mono);">M = (Q, Σ, δ, q0, F)</strong>
+        </p>
+
+        <div class="spec-list">
+          <div class="spec-item">
+            <span class="spec-key">Q</span>
+            <span class="spec-val">Set of machine states: {q0, q1, q2}</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-key">Σ</span>
+            <span class="spec-val">Input alphabet: {0, 1}</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-key">δ</span>
+            <span class="spec-val">Transition function: Q × Σ → Q × {L, R} (Mapped via the 6 rules in the Transition Table above)</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-key">q0</span>
+            <span class="spec-val">Initial state: q0 (head begins at index 0)</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-key">F</span>
+            <span class="spec-val">Set of accepting states: {q1}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="formal-spec-card">
+        <h3 class="panel-title" style="font-size: 1.05rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          Boundary & Demonstration Rules
+        </h3>
+        <div class="spec-list">
+          <div class="spec-item">
+            <span class="spec-key">Right Boundary</span>
+            <span class="spec-val">When head advances past the rightmost symbol (index n), the machine halts. If state is in F (q1), string is <strong>ACCEPTED</strong>; otherwise <strong>REJECTED</strong>.</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-key">Left Boundary</span>
+            <span class="spec-val">If a transition attempts to step left past index 0 (index &lt; 0), tape boundary fall-off occurs; execution halts immediately and <strong>REJECTS</strong>.</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-key">Cycle Detection</span>
+            <span class="spec-val">If configuration (q, i) repeats, the deterministic machine will cycle endlessly. The engine flags <strong>LOOP DETECTED</strong>.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ================= TEST SUITE MODAL ================= -->
+  <div id="modal-tests" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          Automated Verification Test Suite
+        </div>
+        <button id="btn-close-tests" class="modal-close" aria-label="Close modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 16px;">
+          Runs comprehensive regression and correctness tests covering reference string <code>101001</code>, leftward reversals, symbol revisits, edge rejections, and input validations.
+        </p>
+        <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+          <button id="btn-run-all-tests" class="btn-ctrl btn-primary" style="padding: 8px 16px;">
+            ▶ Run Test Suite
+          </button>
+          <span id="test-summary-badge" style="font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; color: var(--accent-emerald);">
+            14 / 14 Tests Passing
+          </span>
+        </div>
+        <div id="tests-list-container">
+          <!-- Dynamically populated test results -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
