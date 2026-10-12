@@ -1,22 +1,28 @@
 /**
  * Two-Way Finite Automata (2FA) - Formal Model & Transition Engine
  * 
- * Formal Definition: M = (Q, Σ, δ, q0, F)
+ * Formal Definition 1 (Textbook 8-Tuple with Delimiters & Halting States):
+ * M = (Q, Σ, ⊢, ⊣, δ, q_start, q_accept, q_reject)
  * - Q: Finite set of states {q0, q1, q2}
  * - Σ: Input alphabet {0, 1}
- * - δ: Q × Σ → Q × {L, R}
- * - q0: Initial state (q0)
- * - F: Final/accepting states {q1}
+ * - ⊢: Left delimiter / endmarker (head cannot move left off ⊢)
+ * - ⊣: Right delimiter / endmarker (marks tape cell n+1)
+ * - δ: (Q \ {q_accept, q_reject}) × (Σ ∪ {⊢, ⊣}) → Q × {L, R}
+ * - q_start: Start state (q0)
+ * - q_accept: Halting accept state (q1)
+ * - q_reject: Halting reject state
  * 
- * Boundary Convention:
- * - Read-only input tape w = w[0]...w[n-1]
- * - Initial head position: index 0 (first symbol)
- * - Right Boundary: Head moves past index n-1 to index n -> Halts.
- *   If halting state in F (q1) => ACCEPTED. Else => REJECTED.
- * - Left Boundary: Head attempts to move past index 0 to index -1 -> Halts.
- *   Breaching the left boundary represents tape fall-off => REJECTED.
- * - Cycle Detection: If configuration (q, i) repeats, deterministic 2FA
- *   will loop infinitely => LOOP DETECTED / EXECUTION LIMIT.
+ * Formal Definition 2 (Compact 5-Tuple / Shepherdson 1959 Model):
+ * M = (Q, Σ, δ, q0, F)
+ * - Boundary Convention (Simulated Engine):
+ *   - Read-only input tape w = w[0]...w[n-1]
+ *   - Initial head position: index 0 (first symbol)
+ *   - Right Boundary (⊣): Head moves past index n-1 to index n -> Halts.
+ *     If halting state in F (q1) => ACCEPTED. Else => REJECTED.
+ *   - Left Boundary (⊢): Head attempts to move past index 0 to index -1 -> Halts.
+ *     Breaching the left boundary represents tape fall-off => REJECTED.
+ *   - Cycle Detection: If configuration (q, i) repeats, deterministic 2FA
+ *     will loop infinitely => LOOP DETECTED (Halts / Rejection).
  */
 
 export const REFERENCE_2FA = {

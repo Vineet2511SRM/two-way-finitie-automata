@@ -500,11 +500,12 @@
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
           </svg>
-          Machine Specifications & Parameters
+          Formal Mathematical Definition (Textbook 8-Tuple)
         </h3>
         <p style="font-size: 0.85rem; color: var(--text-muted);">
-          Two-Way Model Definition:
-          <strong style="color: var(--accent-cyan); font-family: var(--font-mono);">M = (Q, Σ, δ, q0, F)</strong>
+          Standard Classical Formalism (with Tape Delimiters &amp; Halting States):
+          <br>
+          <strong style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: 0.95rem;">M = (Q, Σ, ⊢, ⊣, δ, q<sub>start</sub>, q<sub>accept</sub>, q<sub>reject</sub>)</strong>
         </p>
 
         <div class="spec-list">
@@ -514,19 +515,31 @@
           </div>
           <div class="spec-item">
             <span class="spec-key">Σ</span>
-            <span class="spec-val">Input alphabet: {0, 1}</span>
+            <span class="spec-val">Input alphabet: {0, 1} (where delimiters ⊢, ⊣ ∉ Σ)</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-key">⊢</span>
+            <span class="spec-val"><strong>Left Delimiter / Endmarker:</strong> Guards left tape boundary. Transition invariant: δ(q, ⊢) = (q', R) (head can never move Left off ⊢)</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-key">⊣</span>
+            <span class="spec-val"><strong>Right Delimiter / Endmarker:</strong> Guards right tape boundary at cell n+1. Tape contents: ⊢ w<sub>1</sub>w<sub>2</sub>…w<sub>n</sub> ⊣</span>
           </div>
           <div class="spec-item">
             <span class="spec-key">δ</span>
-            <span class="spec-val">Transition function: Q × Σ → Q × {L, R} (Mapped via the 6 rules in the Transition Table above)</span>
+            <span class="spec-val">Transition function: (Q \ {q<sub>accept</sub>, q<sub>reject</sub>}) × (Σ ∪ {⊢, ⊣}) → Q × {L, R}</span>
           </div>
           <div class="spec-item">
-            <span class="spec-key">q0</span>
-            <span class="spec-val">Initial state: q0 (head begins at index 0)</span>
+            <span class="spec-key">q<sub>start</sub></span>
+            <span class="spec-val">Start state: q0 (head starts on first symbol of w at index 0)</span>
           </div>
           <div class="spec-item">
-            <span class="spec-key">F</span>
-            <span class="spec-val">Set of accepting states: {q1}</span>
+            <span class="spec-key">q<sub>accept</sub></span>
+            <span class="spec-val">Halting Accept state: Machine halts immediately with ACCEPT decision</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-key">q<sub>reject</sub></span>
+            <span class="spec-val">Halting Reject state: Machine halts immediately with REJECT decision</span>
           </div>
         </div>
       </div>
@@ -538,20 +551,28 @@
             <polyline points="2 17 12 22 22 17"></polyline>
             <polyline points="2 12 12 17 22 12"></polyline>
           </svg>
-          Boundary & Demonstration Rules
+          Simulation Engine Mapping (Compact 5-Tuple Model)
         </h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Shepherdson (1959) Coordinate Formulation:
+          <strong style="color: var(--accent-cyan); font-family: var(--font-mono);">M = (Q, Σ, δ, q0, F)</strong>
+        </p>
         <div class="spec-list">
           <div class="spec-item">
             <span class="spec-key">Right Boundary</span>
-            <span class="spec-val">When head advances past the rightmost symbol (index n), the machine halts. If state is in F (q1), string is <strong>ACCEPTED</strong>; otherwise <strong>REJECTED</strong>.</span>
+            <span class="spec-val">Acts as the right delimiter ⊣. When head advances to index n (past input), execution halts. If state ∈ F (q1), string is <strong>ACCEPTED</strong>; otherwise <strong>REJECTED</strong>.</span>
           </div>
           <div class="spec-item">
             <span class="spec-key">Left Boundary</span>
-            <span class="spec-val">If a transition attempts to step left past index 0 (index &lt; 0), tape boundary fall-off occurs; execution halts immediately and <strong>REJECTS</strong>.</span>
+            <span class="spec-val">Acts as the left delimiter ⊢. If a transition attempts to step left past index 0 (index &lt; 0), tape fall-off occurs; halts immediately and <strong>REJECTS</strong>.</span>
           </div>
           <div class="spec-item">
             <span class="spec-key">Cycle Detection</span>
-            <span class="spec-val">If configuration (q, i) repeats, the deterministic machine will cycle endlessly. The engine flags <strong>LOOP DETECTED</strong>.</span>
+            <span class="spec-val">If configuration (q, i) repeats, the deterministic machine cycles infinitely. The engine flags <strong>LOOP DETECTED</strong> (equivalent to halting rejection).</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-key">Equivalence</span>
+            <span class="spec-val">Both formulations are computationally identical: <strong>L(2DFA) = L(1DFA) = REG</strong> (Shepherdson's Theorem).</span>
           </div>
         </div>
       </div>

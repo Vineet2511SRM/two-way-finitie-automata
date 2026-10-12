@@ -7,7 +7,7 @@
 1. [Project Overview & Purpose](#1-project-overview--purpose)
 2. [Comprehensive Academic Viva Guide & Theory Reference](#2-comprehensive-academic-viva-guide--theory-reference)
    - [Q1: What is a 2FA and how does it differ from a standard 1DFA?](#q1-what-is-a-2fa-and-how-does-it-differ-from-a-standard-1dfa)
-   - [Q2: Formal Mathematical Definition (5-Tuple)](#q2-formal-mathematical-definition-5-tuple)
+   - [Q2: Formal Mathematical Definitions: Textbook (8-Tuple with Delimiters) vs Compact (5-Tuple)](#q2-formal-mathematical-definitions-textbook-8-tuple-with-delimiters-vs-compact-5-tuple)
    - [Q3: Shepherdson's Theorem (1959) & Language Power](#q3-shepherdsons-theorem-1959--language-power)
    - [Q4: Infinite Loop Detection & The Pigeonhole Principle](#q4-infinite-loop-detection--the-pigeonhole-principle)
    - [Q5: Tape Boundary & Halting Conventions](#q5-tape-boundary--halting-conventions)
@@ -55,22 +55,57 @@ This section contains complete, rigorous answers to all viva defense questions a
 
 ---
 
-### Q2: Formal Mathematical Definition (5-Tuple)
-A Two-Way Deterministic Finite Automaton is formally defined as a 5-tuple:
+### Q2: Formal Mathematical Definitions: Textbook (8-Tuple with Delimiters) vs Compact (5-Tuple)
+
+In theoretical computer science and formal language textbooks (e.g., Hopcroft & Ullman, Sipser, Kozen), **Two-Way Finite Automata (2DFA)** are presented under two standard mathematical formalisms.
+
+---
+
+#### 1. The Classical Textbook Definition (8-Tuple with Endmarkers & Explicit Halting States)
+To prevent the tape head from wandering off into undefined territory and to allow the automaton to sense input boundaries, the tape is enclosed by special left and right delimiter symbols (endmarkers).
+
+Formally, a 2DFA is defined as an 8-tuple:
+$$M = (Q, \Sigma, \vdash, \dashv, \delta, q_{\text{start}}, q_{\text{accept}}, q_{\text{reject}})$$
+
+Where:
+1. **$Q$**: A finite, non-empty set of internal states.
+2. **$\Sigma$**: The finite input alphabet ($\vdash, \dashv \notin \Sigma$).
+3. **$\vdash$ (Left Delimiter / Endmarker)**: Special marker placed at tape cell $0$ to indicate the left boundary.
+4. **$\dashv$ (Right Delimiter / Endmarker)**: Special marker placed at tape cell $n+1$ to indicate the right boundary. The tape contents for input $w = w_1 w_2 \dots w_n$ are $\vdash w_1 w_2 \dots w_n \dashv$.
+5. **$\delta$**: The deterministic transition function:
+   $$\delta: (Q \setminus \{q_{\text{accept}}, q_{\text{reject}}\}) \times (\Sigma \cup \{\vdash, \dashv\}) \to Q \times \{L, R\}$$
+   * **Boundary Invariant:** For every $q \in Q$, if $\delta(q, \vdash) = (q', D)$, then $D = R$ (the head is never permitted to step left off the left delimiter).
+   * **Halting Invariant:** No transitions are defined out of $q_{\text{accept}}$ or $q_{\text{reject}}$. Entering either state immediately halts execution.
+6. **$q_{\text{start}} \in Q$**: The unique start state. Computation begins at $q_{\text{start}}$ with the head positioned on the first symbol of $w$ (or on $\vdash$).
+7. **$q_{\text{accept}} \in Q$**: The designated halting **accept** state. If the machine enters $q_{\text{accept}}$, the string is accepted.
+8. **$q_{\text{reject}} \in Q$**: The designated halting **reject** state ($q_{\text{reject}} \neq q_{\text{accept}}$). If the machine enters $q_{\text{reject}}$, or if it loops indefinitely, the string is rejected.
+
+---
+
+#### 2. The Compact / Direct Boundary Definition (5-Tuple as used in Shepherdson 1959 & our Visualizer Engine)
+In foundational papers (such as J. C. Shepherdson, 1959) and in direct computational simulators, the tape is indexed over $\{0, 1, \dots, n-1\}$ and boundary conditions are handled by coordinate exit conventions rather than explicit marker cells:
 $$M = (Q, \Sigma, \delta, q_0, F)$$
 
 Where:
-1. $Q = \{q_0, q_1, q_2\}$: A finite, non-empty set of internal states.
-2. $\Sigma = \{0, 1\}$: The finite input alphabet.
-3. $\delta: Q \times \Sigma \to Q \times \{L, R\}$: The deterministic transition function. Given the current state $q \in Q$ and scanned symbol $a \in \Sigma$, $\delta(q, a)$ produces a pair $(q', D)$ where $q' \in Q$ is the next state and $D \in \{L, R\}$ is the head movement direction.
-4. $q_0 \in Q$: The initial state where computation begins ($q_0$).
-5. $F \subseteq Q$: The set of final / accepting states ($F = \{q_1\}$).
+1. **$Q = \{q_0, q_1, q_2\}$**: Set of internal states.
+2. **$\Sigma = \{0, 1\}$**: Input alphabet.
+3. **$\delta: Q \times \Sigma \to Q \times \{L, R\}$**: The transition function mapping state and scanned bit to next state and head movement ($L$ or $R$).
+4. **$q_0 \in Q$**: Initial start state ($q_0$).
+5. **$F \subseteq Q$**: Set of accepting / final states ($F = \{q_1\}$).
+6. **Boundary & Halting Mapping:**
+   * **Left Delimiter Analogue:** Stepping left off cell $0$ (index $< 0$) acts as an illegal boundary fault $\to$ immediate rejection.
+   * **Right Delimiter Analogue:** Stepping past cell $n-1$ to index $n$ signals completion of the tape $\to$ halts; accepted if state $\in F$, rejected otherwise.
+   * **Accept / Reject State Analogue:** Halting at index $n$ in state $q_1 \in F$ corresponds to $q_{\text{accept}}$; halting in any other state or falling off the left edge corresponds to $q_{\text{reject}}$.
+
+Both formulations have **identical computational power** ($\mathcal{L}(2DFA) = \text{REG}$) and can be converted into each other without loss of generality.
+
+---
 
 #### Concrete Transition Table Used in This Simulator:
 | Current State $q$ | Role / Description | Input '0' $\to (q', D)$ | Input '1' $\to (q', D)$ |
 | :--- | :--- | :--- | :--- |
-| **$q_0$** | Initial State | $\delta(q_0, 0) = (q_0, R)$ | $\delta(q_0, 1) = (q_1, R)$ |
-| **$q_1$** | Accepting / Final State | $\delta(q_1, 0) = (q_1, R)$ | $\delta(q_1, 1) = (q_2, L)$ |
+| **$q_0$** | Initial State ($q_{\text{start}}$) | $\delta(q_0, 0) = (q_0, R)$ | $\delta(q_0, 1) = (q_1, R)$ |
+| **$q_1$** | Accepting / Final State ($F / q_{\text{accept}}$ candidate) | $\delta(q_1, 0) = (q_1, R)$ | $\delta(q_1, 1) = (q_2, L)$ |
 | **$q_2$** | Reversal / Intermediate State | $\delta(q_2, 0) = (q_0, R)$ | $\delta(q_2, 1) = (q_1, L)$ |
 
 #### Complete Set of Individual Transition State Functions:
